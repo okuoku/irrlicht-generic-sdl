@@ -20,8 +20,8 @@
 #include <emscripten/html5.h>
 #endif
 
-#include <SDL/SDL.h>
-#include <SDL/SDL_syswm.h>
+#include "SDL.h"
+#include "SDL_syswm.h"
 
 namespace irr
 {
