@@ -46,6 +46,9 @@
 		#include <unistd.h>
 #elif defined(_IRR_EMSCRIPTEN_PLATFORM_)
     #include <unistd.h>
+#elif defined(_IRR_GENERIC_SDL1_PLATFORM_)
+    extern "C" int access(const char* path, int zero);
+    extern "C" int chdir(const char* path);
 #endif
 
 namespace irr
