@@ -28,7 +28,9 @@
 #endif
 
 #ifdef _MSC_VER
+#if 0
 #pragma comment(lib, "libGLESv2.lib")
+#endif
 #endif
 
 namespace irr

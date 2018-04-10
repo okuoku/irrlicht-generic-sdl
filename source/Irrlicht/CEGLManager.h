@@ -20,7 +20,9 @@
 #include "IContextManager.h"
 
 #ifdef _MSC_VER
+#if 0 // FIXME: Don't trick the linker
 #pragma comment(lib, "libEGL.lib")
+#endif 
 #endif
 
 namespace irr

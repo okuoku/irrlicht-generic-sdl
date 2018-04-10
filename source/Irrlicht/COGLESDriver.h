@@ -27,7 +27,9 @@
 #endif
 
 #ifdef _MSC_VER
+#if 0 // FIXME: Don't trick the linker
 #pragma comment(lib, "libGLES_CM.lib")
+#endif
 #endif
 
 namespace irr
