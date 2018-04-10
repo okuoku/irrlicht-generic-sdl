@@ -4,21 +4,17 @@
 // This device code is based on the original SDL device implementation
 // contributed by Shane Parker (sirshane).
 
-#ifndef __C_IRR_DEVICE_SDL_H_INCLUDED__
-#define __C_IRR_DEVICE_SDL_H_INCLUDED__
+#ifndef __C_IRR_DEVICE_SDL2_H_INCLUDED__
+#define __C_IRR_DEVICE_SDL2_H_INCLUDED__
 
 #include "IrrCompileConfig.h"
 
-#ifdef _IRR_COMPILE_WITH_SDL_DEVICE_
+#ifdef _IRR_COMPILE_WITH_SDL2_DEVICE_
 
 #include "IrrlichtDevice.h"
 #include "CIrrDeviceStub.h"
 #include "IImagePresenter.h"
 #include "ICursorControl.h"
-
-#ifdef _IRR_EMSCRIPTEN_PLATFORM_
-#include <emscripten/html5.h>
-#endif
 
 #include "SDL.h"
 #include "SDL_syswm.h"
@@ -26,15 +22,15 @@
 namespace irr
 {
 
-	class CIrrDeviceSDL : public CIrrDeviceStub, video::IImagePresenter
+	class CIrrDeviceSDL2 : public CIrrDeviceStub, video::IImagePresenter
 	{
 	public:
 
 		//! constructor
-		CIrrDeviceSDL(const SIrrlichtCreationParameters& param);
+		CIrrDeviceSDL2(const SIrrlichtCreationParameters& param);
 
 		//! destructor
-		virtual ~CIrrDeviceSDL();
+		virtual ~CIrrDeviceSDL2();
 
 		//! runs the device. Returns false if device wants to be deleted
 		virtual bool run() _IRR_OVERRIDE_;
@@ -108,7 +104,7 @@ namespace irr
 		{
 		public:
 
-			CCursorControl(CIrrDeviceSDL* dev)
+			CCursorControl(CIrrDeviceSDL2* dev)
 				: Device(dev), IsVisible(true)
 			{
 			}
@@ -152,7 +148,7 @@ namespace irr
 			//! Sets the new position of the cursor.
 			virtual void setPosition(s32 x, s32 y) _IRR_OVERRIDE_
 			{
-				SDL_WarpMouse( x, y );
+				SDL_WarpMouseInWindow(Device->ScreenWindow, x, y );
 			}
 
 			//! Returns the current position of the mouse cursor.
@@ -178,24 +174,6 @@ namespace irr
 
 			void updateCursorPos()
 			{
-#ifdef _IRR_EMSCRIPTEN_PLATFORM_
-				EmscriptenPointerlockChangeEvent pointerlockStatus; // let's hope that test is not expensive ...
-				if ( emscripten_get_pointerlock_status(&pointerlockStatus) == EMSCRIPTEN_RESULT_SUCCESS )
-				{
-					if ( pointerlockStatus.isActive )
-					{
-						CursorPos.X += Device->MouseXRel;
-						CursorPos.Y += Device->MouseYRel;
-						Device->MouseXRel = 0;
-						Device->MouseYRel = 0;
-					}
-					else
-					{
-						CursorPos.X = Device->MouseX;
-						CursorPos.Y = Device->MouseY;
-					}
-				}
-#else
 				CursorPos.X = Device->MouseX;
 				CursorPos.Y = Device->MouseY;
 
@@ -207,24 +185,14 @@ namespace irr
 					CursorPos.Y = 0;
 				if (CursorPos.Y > (s32)Device->Height)
 					CursorPos.Y = Device->Height;
-#endif
 			}
 
-			CIrrDeviceSDL* Device;
+			CIrrDeviceSDL2* Device;
 			core::position2d<s32> CursorPos;
 			bool IsVisible;
 		};
 
 	private:
-
-#ifdef _IRR_EMSCRIPTEN_PLATFORM_
-	static EM_BOOL MouseUpDownCallback(int eventType, const EmscriptenMouseEvent * event, void* userData);
-	static EM_BOOL MouseEnterCallback(int eventType, const EmscriptenMouseEvent *mouseEvent, void *userData);
-	static EM_BOOL MouseLeaveCallback(int eventType, const EmscriptenMouseEvent *mouseEvent, void *userData);
-
-	// Check if it's a special key like left, right, up down and so on which shouldn't have a Unicode character.
-	bool isNoUnicodeKey(EKEY_CODE key) const;
-#endif
 
 		//! create the driver
 		void createDriver();
@@ -235,8 +203,15 @@ namespace irr
 
 		void logAttributes();
 
-		SDL_Surface* Screen;
-		int SDL_Flags;
+		void resizeWindow(u32 x, u32 y);
+
+		bool SoftwareRendered;
+		SDL_Surface* ScreenSurface;
+		SDL_Window* ScreenWindow;
+		SDL_Texture* ScreenTexture;
+		SDL_Renderer* ScreenRenderer;
+		bool Fullscreen;
+
 #if defined(_IRR_COMPILE_WITH_JOYSTICK_EVENTS_)
 		core::array<SDL_Joystick*> Joysticks;
 #endif
@@ -274,6 +249,6 @@ namespace irr
 
 } // end namespace irr
 
-#endif // _IRR_COMPILE_WITH_SDL_DEVICE_
-#endif // __C_IRR_DEVICE_SDL_H_INCLUDED__
+#endif // _IRR_COMPILE_WITH_SDL2_DEVICE_
+#endif // __C_IRR_DEVICE_SDL2_H_INCLUDED__
 
