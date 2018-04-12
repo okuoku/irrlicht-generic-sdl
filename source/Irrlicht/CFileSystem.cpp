@@ -46,7 +46,7 @@
 		#include <unistd.h>
 #elif defined(_IRR_EMSCRIPTEN_PLATFORM_)
     #include <unistd.h>
-#elif defined(_IRR_GENERIC_SDL1_PLATFORM_)
+#elif defined(_IRR_GENERIC_SDL1_PLATFORM_) || defined(_IRR_GENERIC_SDL2_PLATFORM_)
     extern "C" int access(const char* path, int zero);
     extern "C" int chdir(const char* path);
 #endif
@@ -595,7 +595,7 @@ bool CFileSystem::changeWorkingDirectoryTo(const io::path& newDirectory)
 	{
 		WorkingDirectory[FILESYSTEM_NATIVE] = newDirectory;
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && defined(_IRR_WINDOWS_API_)
 	#if defined(_IRR_WCHAR_FILESYSTEM)
 		success = (_wchdir(newDirectory.c_str()) == 0);
 	#else
@@ -966,7 +966,7 @@ bool CFileSystem::existFile(const io::path& filename) const
 		if (FileArchives[i]->getFileList()->findFile(filename)!=-1)
 			return true;
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && defined(_IRR_WINDOWS_API_)
 	#if defined(_IRR_WCHAR_FILESYSTEM)
 		return (_waccess(filename.c_str(), 0) != -1);
 	#else
