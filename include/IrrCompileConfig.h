@@ -58,9 +58,11 @@
 //! WIN64 for Windows64
 // The windows platform and API support SDL and WINDOW device
 #if defined(_WIN32) || defined(_WIN64) || defined(WIN32) || defined(WIN64)
+#ifndef NO_IRR_COMPILE_WITH_WINDOWS_DEVICE_ // FIXME: Find out UWP definitions
 #define _IRR_WINDOWS_
 #define _IRR_WINDOWS_API_
 #define _IRR_COMPILE_WITH_WINDOWS_DEVICE_
+#endif
 #endif
 
 #if defined(_MSC_VER) && (_MSC_VER < 1500)
@@ -130,7 +132,7 @@
 #endif
 #endif
 
-#if !defined(_IRR_WINDOWS_API_) && !defined(_IRR_OSX_PLATFORM_) && !defined(_IRR_IOS_PLATFORM_) && !defined(_IRR_ANDROID_PLATFORM_) && !defined(_IRR_EMSCRIPTEN_PLATFORM_) && !defined(_IRR_GENERIC_SDL1_PLATFORM_)
+#if !defined(_IRR_WINDOWS_API_) && !defined(_IRR_OSX_PLATFORM_) && !defined(_IRR_IOS_PLATFORM_) && !defined(_IRR_ANDROID_PLATFORM_) && !defined(_IRR_EMSCRIPTEN_PLATFORM_) && !defined(_IRR_GENERIC_SDL1_PLATFORM_) && !defined(_IRR_GENERIC_SDL2_PLATFORM_)
 #ifndef _IRR_SOLARIS_PLATFORM_
 #define _IRR_LINUX_PLATFORM_
 #endif
