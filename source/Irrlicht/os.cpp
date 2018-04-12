@@ -7,7 +7,7 @@
 #include "IrrCompileConfig.h"
 #include "irrMath.h"
 
-#if defined(_IRR_COMPILE_WITH_SDL_DEVICE_)
+#if defined(_IRR_COMPILE_WITH_SDL1_DEVICE_) || defined(_IRR_COMPILE_WITH_SDL2_DEVICE_)
 	#include "SDL_endian.h"
 	#define bswap_16(X) SDL_Swap16(X)
 	#define bswap_32(X) SDL_Swap32(X)
@@ -250,7 +250,30 @@ namespace os
         return (u32)(time);
 	}
 } // end namespace os
+#elif defined(_IRR_GENERIC_SDL1_PLATFORM_) || defined(_IRR_GENERIC_SDL2_PLATFORM_)
+#include <stdio.h>
+namespace irr
+{
+	namespace os
+	{
 
+		//! prints a debuginfo string
+		void Printer::print(const c8* message, ELOG_LEVEL ll)
+		{
+			printf("%s\n", message);
+		}
+
+		void Timer::initTimer(bool usePerformanceTimer)
+		{
+			initVirtualTimer();
+		}
+
+		u32 Timer::getRealTime()
+		{
+			// FIXME: Implement it.
+			return 0;
+		}
+} // end namespace os
 #else
 
 // ----------------------------------------------------------------
@@ -368,12 +391,15 @@ namespace os
 	//! Get real time and date in calendar form
 	ITimer::RealTimeDate Timer::getRealTimeAndDate()
 	{
+#if 0 // FIXME: FIXME FIXME
 		time_t rawtime;
 		time(&rawtime);
 
 		struct tm * timeinfo;
 		timeinfo = localtime(&rawtime);
-
+#else
+		struct tm * timeinfo = NULL;
+#endif
 		// init with all 0 to indicate error
 		ITimer::RealTimeDate date;
 		memset(&date, 0, sizeof(date));

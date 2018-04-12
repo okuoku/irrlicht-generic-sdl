@@ -10,7 +10,9 @@
 #endif
 #else
 #include <string.h>
+#ifdef _IRR_POSIX_API_
 #include <unistd.h>
+#endif
 #ifndef _IRR_ANDROID_PLATFORM_
 #include <sys/types.h>
 #ifdef _IRR_OSX_PLATFORM_
