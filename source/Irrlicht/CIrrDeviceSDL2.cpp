@@ -26,12 +26,74 @@
 #include "SDL_syswm.h"
 #include "SDL_video.h"
 
+// FIMXE: Split ContextManager into separate files
+#include "SIrrCreationParameters.h"
+#include "SExposedVideoData.h"
+#include "IContextManager.h"
+
+namespace irr
+{
+	namespace video
+	{
+		class CSDLContextManager : public IContextManager
+		{
+		public:
+			CSDLContextManager(SDL_Window* me) : Window(me) {}
+			~CSDLContextManager() {}
+			bool initialize(const SIrrlichtCreationParameters& params,
+				const SExposedVideoData& data) {
+				Data = data;
+				return true;
+			}
+			void terminate() {}
+			bool generateSurface() {
+				return true;
+			}
+			void destroySurface() {
+			}
+			bool generateContext() {
+				Context = SDL_GL_CreateContext(Window);
+				if (Context) {
+					SDL_GL_MakeCurrent(Window, Context);
+					SDL_GL_SetSwapInterval(0);
+				}
+				return (Context) ? true : false;
+			}
+			void destroyContext() {
+				if (Context) {
+					SDL_GL_DeleteContext(Context);
+					Context = NULL;
+				}
+			}
+			const SExposedVideoData& getContext() const {
+				return Data;
+			}
+			bool activateContext(const SExposedVideoData& videoData) {
+				return (SDL_GL_MakeCurrent(Window, Context) == 0) ? true : false;
+			}
+			bool swapBuffers() {
+				SDL_GL_SwapWindow(Window);
+				return true;
+			}
+		private:
+			SExposedVideoData Data;
+			SDL_GLContext Context;
+			SDL_Window* Window;
+		};
+	}
+}
+
+
 static int SDLDeviceInstances = 0;
 
 namespace irr
 {
 	namespace video
 	{
+		#if defined(_IRR_COMPILE_WITH_OGLES1_)
+		IVideoDriver* createOGLES1Driver(const irr::SIrrlichtCreationParameters& params, io::IFileSystem* io, IContextManager* contextManager);
+		#endif
+
 		#if defined(_IRR_COMPILE_WITH_OGLES2_)
 		IVideoDriver* createOGLES2Driver(const irr::SIrrlichtCreationParameters& params, io::IFileSystem* io, IContextManager* contextManager);
 		#endif
@@ -171,18 +233,36 @@ bool CIrrDeviceSDL2::createWindow()
 	if ( Close )
 		return false;
 
-	ScreenWindow = SDL_CreateWindow("Untitled", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-		Width, Height, 0);
+
 
 	if (CreationParams.DriverType == video::EDT_BURNINGSVIDEO || CreationParams.DriverType == video::EDT_SOFTWARE) {
 		SoftwareRendered = true;
 	}
+	else {
+		// Assume OpenGLES
+		SDL_SetHint(SDL_HINT_OPENGL_ES_DRIVER, "1");
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+
+		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+		SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+		// FIXME: Assume GLES2
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+	}
+
+	int flags = SoftwareRendered ? 0 : SDL_WINDOW_OPENGL;
+
+	ScreenWindow = SDL_CreateWindow("Untitled", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+		Width, Height, flags);
+
 
 	if (SoftwareRendered)
 	{
 		ScreenRenderer = SDL_CreateRenderer(ScreenWindow, -1, 0);
 		resizeWindow(Width, Height);
 	}
+
 
 #if 0 // FIXME: Handle HW OpenGL
 	if (CreationParams.DriverType == video::EDT_OPENGL)
@@ -293,19 +373,33 @@ void CIrrDeviceSDL2::createDriver()
 		#endif
 		break;
 
-	case video::EDT_OGLES2:
-#if defined(_IRR_COMPILE_WITH_OGLES2_)
+	case video::EDT_OGLES1:
+		#if defined(_IRR_COMPILE_WITH_OGLES1_)
 		{
 			video::SExposedVideoData data;
 
-			ContextManager = new video::CEGLManager();
+			ContextManager = new irr::video::CSDLContextManager(this->ScreenWindow);
+			ContextManager->initialize(CreationParams, data);
+
+			VideoDriver = video::createOGLES1Driver(CreationParams, FileSystem, ContextManager);
+		}
+		#else
+		os::Printer::log("No OpenGL-ES1 support compiled in.", ELL_ERROR);
+		#endif
+		break;
+	case video::EDT_OGLES2:
+		#if defined(_IRR_COMPILE_WITH_OGLES2_)
+		{
+			video::SExposedVideoData data;
+
+			ContextManager = new irr::video::CSDLContextManager(this->ScreenWindow);
 			ContextManager->initialize(CreationParams, data);
 
 			VideoDriver = video::createOGLES2Driver(CreationParams, FileSystem, ContextManager);
 		}
-#else
+		#else
 		os::Printer::log("No OpenGL-ES2 support compiled in.", ELL_ERROR);
-#endif
+		#endif
 		break;
 
 	case video::EDT_WEBGL1:
