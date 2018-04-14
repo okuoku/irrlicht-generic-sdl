@@ -252,6 +252,7 @@ namespace os
 } // end namespace os
 #elif defined(_IRR_GENERIC_SDL1_PLATFORM_) || defined(_IRR_GENERIC_SDL2_PLATFORM_)
 #include <stdio.h>
+#include "SDL.h"
 namespace irr
 {
 	namespace os
@@ -270,8 +271,7 @@ namespace irr
 
 		u32 Timer::getRealTime()
 		{
-			// FIXME: Implement it.
-			return 0;
+			return SDL_GetTicks();
 		}
 } // end namespace os
 #else
