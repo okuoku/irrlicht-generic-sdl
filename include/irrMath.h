@@ -186,6 +186,12 @@ namespace core
 	inline T roundingError();
 
 	template <>
+	inline short roundingError()
+	{
+		return 0;
+	}
+
+	template <>
 	inline f32 roundingError()
 	{
 		return ROUNDING_ERROR_f32;
