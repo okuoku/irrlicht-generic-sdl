@@ -310,6 +310,8 @@ namespace os
 
 #endif // end linux / emscripten / android / windows
 
+#include <time.h>
+
 namespace os
 {
 	// The platform independent implementation of the printer
