@@ -31,6 +31,13 @@
 #include "SExposedVideoData.h"
 #include "IContextManager.h"
 
+// FIXME: ... and SDL2 Asset reader
+#include "IFileSystem.h"
+#include "IReadFile.h"
+#include "IFileArchive.h"
+#include "CFileList.h"
+#include "SDL_rwops.h"
+
 namespace irr
 {
 	namespace video
@@ -81,6 +88,94 @@ namespace irr
 			SDL_Window* Window;
 		};
 	}
+
+        namespace io
+        {
+            class CSDL2ReadFile : public virtual IReadFile
+            {
+                public:
+                CSDL2ReadFile(const io::path& fn, SDL_RWops* ops)
+                {
+                    filename = fn;
+                    rwop = ops;
+                }
+                virtual ~CSDL2ReadFile()
+                {
+                    if(rwop)
+                        (void) SDL_RWclose(rwop);
+                }
+
+                size_t read(void* buffer, size_t sizeToRead)
+                {
+                    size_t r;
+
+                    r = SDL_RWread(rwop, buffer, 1, sizeToRead);
+                    return r;
+                }
+
+                bool seek(long finalPos, bool relative = false)
+                {
+                    const int w = relative ? RW_SEEK_CUR : RW_SEEK_SET;
+                    (void) SDL_RWseek(rwop, finalPos, w);
+                    return true;
+                }
+
+                long getSize() const {
+                    return SDL_RWsize(rwop);
+                }
+
+                long getPos() const {
+                    return SDL_RWtell(rwop);
+                }
+
+                const io::path& getFileName() const {
+                    return filename;
+                }
+
+                bool isOpen() const {
+                    return true;
+                }
+
+                private:
+                SDL_RWops* rwop;
+                io::path filename;
+            };
+            class CSDL2FileArchive : public virtual IFileArchive, virtual CFileList
+            {
+                public:
+                CSDL2FileArchive() : CFileList("/", false, false)
+                { 
+                    // FIXME: What should we say here..?
+                    myname = "SDL2";
+                }
+                virtual ~CSDL2FileArchive() { }
+
+                IReadFile* createAndOpenFile(const io::path& fn)
+                {
+                    SDL_RWops* rwop;
+                    rwop = SDL_RWFromFile(fn.c_str(), "rb");
+                    if(rwop){
+                        return new CSDL2ReadFile(fn,rwop);
+                    }else{
+                        return 0;
+                    }
+                }
+                IReadFile* createAndOpenFile(u32 idx)
+                {
+                    return 0;
+                }
+                const IFileList* getFileList() const
+                {
+                    return this;
+                }
+                const io::path& getArchiveName() const
+                {
+                    return myname;
+                }
+                private:
+                io::path myname;
+            };
+        }
 }
 
 
@@ -139,6 +234,10 @@ CIrrDeviceSDL2::CIrrDeviceSDL2(const SIrrlichtCreationParameters& param)
 			os::Printer::log("SDL initialized", ELL_INFORMATION);
 		}
 	}
+
+        io::CSDL2FileArchive* fs = new io::CSDL2FileArchive();
+        this->FileSystem->addFileArchive(fs);
+        fs->drop();
 
 	SDL_VERSION(&Info.version);
 
@@ -582,9 +681,11 @@ bool CIrrDeviceSDL2::run()
 						VideoDriver->OnResize(core::dimension2d<u32>(Width, Height));
 				}
 				break;
+			case SDL_WINDOWEVENT_ENTER:
 			case SDL_WINDOWEVENT_FOCUS_GAINED:
 				WindowHasFocus = true;
 				break;
+			case SDL_WINDOWEVENT_LEAVE:
 			case SDL_WINDOWEVENT_FOCUS_LOST:
 				WindowHasFocus = false;
 				break;
