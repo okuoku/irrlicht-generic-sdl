@@ -689,6 +689,8 @@ bool CIrrDeviceSDL2::run()
 			case SDL_WINDOWEVENT_FOCUS_LOST:
 				WindowHasFocus = false;
 				break;
+			case SDL_WINDOWEVENT_RESTORED:
+			case SDL_WINDOWEVENT_MAXIMIZED:
 			case SDL_WINDOWEVENT_SHOWN:
 				WindowMinimized = false;
 				break;
